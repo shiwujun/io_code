@@ -20,15 +20,12 @@
 //above to define the site number of one file
 
 //below to define the number of file
-#define file_num_set 1000
+#define file_num_set 100
 //above to define the number of file
 
 //output block size in MB
 //change this
 #define _output_block 4
-
-//if define _buffer_define, set the size of buffer in MB
-#define _buffer_size_set 16
 
 static int get_system_output(char* cmd, char* output, int size)
 {
