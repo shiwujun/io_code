@@ -13,19 +13,19 @@
 
 
 //below to define the site number of one file
-#define B2kB 1024
-#define kB2MB 1024
-#define MB2GB 1024
 #define __lie 1
 //above to define the site number of one file
 
 //below to define the number of file
-#define file_num_set 100
+#define file_num_set 10
 //above to define the number of file
 
 //output block size in MB
 //change this
 #define _output_block 4
+
+//if define _buffer_define, set the size of buffer in MB
+//#define _buffer_size_set 16
 
 static int get_system_output(char* cmd, char* output, int size)
 {
@@ -46,12 +46,17 @@ static int get_system_output(char* cmd, char* output, int size)
 
 int main(int argc, char* argv[])
 {
+    // constant
+    int B2kB = 1024;
+    int kB2MB = 1024;
+    int MB2GB = 1024;
+    int GB2TB = 1024;
+
     //mpi part
     int process_id, tot_process, host_name_len;
     char host_name[MPI_MAX_PROCESSOR_NAME];
     int loop_pid;
     int root_pid = 0;
-
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &tot_process);
@@ -64,21 +69,20 @@ int main(int argc, char* argv[])
     __int64 total_site_num = (__int64)_1line * _lie;
     double* data_1d;
     Tx_1D(&data_1d, total_site_num);
-    double total_size = 1.0 * total_site_num / 1024.0 / 1024.0 / 1024.0 * sizeof(double); //size in memory
+    double total_size = (1.0 * total_site_num) / (1.0 * B2kB * kB2MB * MB2GB) * sizeof(double); //size in memory (GB)
 
     //for output
-    int one_output = _output_block * 1024 * 1024; 
+    int one_output = _output_block * B2kB * kB2MB;
     int num_output = total_site_num * sizeof(data_1d[0]) / one_output;
 
     //record the system time
     char command_time[1000] = { " " };
     char command_line[] = { "date" };
 
-
     if (process_id == root_pid)
     {
         fprintf_s(stdout, "sizeof(int) = %ld, sizeof(long) = %ld, sizeof(long long) = %ld, sizeof(MKL_INT) = %ld, sizeof(__int64) = %ld\n", sizeof(int), sizeof(long), sizeof(long long), sizeof(MKL_INT), sizeof(__int64));
-        fprintf_s(stdout, "%20.6lf GB size of file will be allocated at each process.\n", total_size);
+        fprintf_s(stdout, "%-20.6lf GB size of file will be allocated at each process.\n", total_size);
         fprintf_s(stdout, "size of one_output       = %d\n", one_output);
         fprintf_s(stdout, "size of num_output       = %d\n", num_output);
         fprintf_s(stdout, "size of total_num in num = %lld\n", total_site_num);
@@ -131,7 +135,6 @@ int main(int argc, char* argv[])
     vslNewStream(&stream, VSL_BRNG_SFMT19937, process_id);
     vdRngUniform(VSL_RNG_METHOD_UNIFORM_STD_ACCURATE, stream, total_site_num, data_1d, 0.0, 10000.0);
     vslDeleteStream(&stream);
-
 
     //begin write the system time
     fprintf_s(stdout, "finish initial the 1D vector at pid: %d of %d...\n", process_id, tot_process - 1);
